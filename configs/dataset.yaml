@@ -1,0 +1,7 @@
+# Dataset configuration for external storage paths.
+# Ensure these paths point to your actual data storage outside the repository.
+
+dataset:
+  raw_frames: C:/Users/User/Downloads/Database/raw_frames
+  aligned_faces: C:/Users/User/Downloads/Database/aligned_faces
+  gallery_embeddings: C:/Users/User/Downloads/Database/gallery_embeddings.npy
