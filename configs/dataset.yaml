@@ -2,6 +2,6 @@
 # Ensure these paths point to your actual data storage outside the repository.
 
 dataset:
-  raw_frames: C:/Users/User/Downloads/Database/raw_frames
-  aligned_faces: C:/Users/User/Downloads/Database/aligned_faces
-  gallery_embeddings: C:/Users/User/Downloads/Database/gallery_embeddings.npy
+  raw_frames:  E:\ha_meem_ai_surveillance\database\raw_frames
+  aligned_faces:  E:\ha_meem_ai_surveillance\database\aligned_faces
+  gallery_embeddings:  E:\ha_meem_ai_surveillance\database\gallery_embeddings.npy
