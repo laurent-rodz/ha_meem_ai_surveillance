@@ -9,5 +9,5 @@ logging:
   level: INFO
 
 models:
-  scrfd_onnx:  E:\ha_meem_ai_surveillance\models\exported\scrfd_10g_bnkps.onnx
-  adaface_onnx:  E:\ha_meem_ai_surveillance\models\exported\adaface.onnx
+  scrfd_onnx: models/scrfd_10g_bnkps.onnx
+  adaface_onnx: models/adaface.onnx

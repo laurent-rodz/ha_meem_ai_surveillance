@@ -26,15 +26,22 @@ venv.bak/
 ENV/
 
 # Models and Weights
-models/face_detection/*.pth
-models/face_detection/*.onnx
-models/face_detection/*.engine
-models/face_recognition/*.pth
-models/face_recognition/*.onnx
-models/face_recognition/*.engine
-models/exported/*.onnx
-models/exported/*.engine
-models/exported/*.trt
+models/**/*.onnx
+models/**/*.engine
+models/**/*.trt
+models/**/*.pth
+models/**/*.bin
+models/*.onnx
+models/*.engine
+models/*.trt
+models/*.pth
+models/*.bin
+
+# Data and Datasets
+data/
+database/
+snapshots/
+!**/README.md
 
 # Experiments and Logs
 .clearml/
@@ -50,9 +57,6 @@ Thumbs.db
 .idea/
 .gemini/
 .agents/
-# Snapshots
-snapshots/
-database/
 
 # Sessions
 whatsapp_session/
