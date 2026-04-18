@@ -3,10 +3,11 @@ numpy==2.2.6
 PyYAML==6.0.3
 
 # Vision & AI Inference
-opencv-python-headless==4.13.0.92
+opencv-python==4.13.0.92
 onnxruntime-gpu==1.23.2
 insightface==0.7.3
 scikit-learn==1.7.2
+supervision==0.27.0
 
 # Web API & Bot
 fastapi==0.135.3

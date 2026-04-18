@@ -1,3 +1,3 @@
-from .iou_tracker import IOUTracker
+from .byte_tracker import ByteTracker
 
-__all__ = ["IOUTracker"]
+__all__ = ["ByteTracker"]

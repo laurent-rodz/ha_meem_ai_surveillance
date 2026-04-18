@@ -2,6 +2,6 @@
 # Ensure these paths point to your actual data storage outside the repository.
 
 dataset:
-  raw_frames: database/raw_frames
-  aligned_faces: database/aligned_faces
-  gallery_embeddings: database/gallery_embeddings.npy
+  raw_frames: data/raw_frames
+  aligned_faces: data/aligned_faces
+  gallery_embeddings: data/gallery_embeddings.npy

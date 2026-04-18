@@ -7,7 +7,7 @@ import numpy as np
 
 from core.events import EventEmitter, SnapshotWriter
 from core.detection import SCRFDDetector, Face
-from core.tracking import IOUTracker
+from core.tracking import ByteTracker
 from core.recognition import AdaFaceRecognizer
 from core.fusion import EmbeddingAggregator
 from core.quality import calculate_blur_score
@@ -30,7 +30,7 @@ def run_pipeline():
     # Initialize components
     # Note: Paths are placeholders as weights aren't committed
     detector = SCRFDDetector(config, config['models']['scrfd_onnx'])
-    tracker = IOUTracker(iou_threshold=0.3)
+    tracker = ByteTracker(track_activation_threshold=0.25, lost_track_buffer=30)
     recognizer = AdaFaceRecognizer(config, config['models']['adaface_onnx'])
     aggregator = EmbeddingAggregator(
         buffer_size=10, 
