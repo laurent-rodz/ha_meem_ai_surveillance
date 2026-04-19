@@ -5,8 +5,5 @@ cameras:
     name: Front Entrance
 
   - id: camera_02
-    url: data/test_videos/ismum.mp4
+    url: rtsp://admin:admin123@175.29.168.110:6222/cam/realmonitor?channel=32&subtype=0
     name: Back Exit
-
-#rtsp://admin:admin123@175.29.168.110:6222/cam/realmonitor?channel=30&subtype=0
-#rtsp://admin:admin123@175.29.168.110:6222/cam/realmonitor?channel=13&subtype=0

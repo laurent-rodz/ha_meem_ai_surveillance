@@ -2,6 +2,18 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+import numpy as np
+
+class NumpyEncoder(json.JSONEncoder):
+    """Custom JSON encoder for numpy types."""
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumpyEncoder, self).default(obj)
 
 class EventEmitter:
     """Emits structured recognition events to a log file."""
@@ -16,5 +28,5 @@ class EventEmitter:
     def emit(self, event_data: dict):
         """Append the event data as a JSON line to the log file."""
         with open(self.log_file, 'a', buffering=1) as f:
-            f.write(json.dumps(event_data) + "\n")
+            f.write(json.dumps(event_data, cls=NumpyEncoder) + "\n")
 
