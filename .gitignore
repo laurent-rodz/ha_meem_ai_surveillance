@@ -4,26 +4,26 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-build/
+/env/
+/build/
 develop-eggs/
-dist/
+/dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
-sdist/
+/sdist/
 var/
-wheels/
+/wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.venv
-venv/
-venv.bak/
-ENV/
+/.venv
+/venv/
+/venv.bak/
+/ENV/
 
 # Models and Weights
 models/**/*.onnx
@@ -38,14 +38,18 @@ models/*.pth
 models/*.bin
 
 # Data and Datasets
-data/
-database/
-snapshots/
-!**/README.md
+/data/*
+!/data/README.md
+/database/*
+!/database/README.md
+/snapshots/*
+!/snapshots/README.md
+/models/*
+!/models/README.md
 
 # Experiments and Logs
-.clearml/
-logs/
+/.clearml/
+/logs/
 *.log
 
 # OS
@@ -60,3 +64,6 @@ Thumbs.db
 
 # Sessions
 whatsapp_session/
+
+# TensorRT engine cache
+/trt_cache/

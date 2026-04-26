@@ -23,9 +23,10 @@ def run_pipeline():
     default_cfg = load_config('configs/default.yaml')
     camera_cfg = load_config('configs/cameras.yaml')
     threshold_cfg = load_config('configs/thresholds.yaml')
-    
-    # Merge configs
-    config = {**default_cfg, **threshold_cfg}
+    trt_cfg = load_config('configs/tensorrt.yaml')
+
+    # Merge configs — tensorrt section is picked up by detector/recognizer __init__
+    config = {**default_cfg, **threshold_cfg, **trt_cfg}
     
     # Initialize components
     # Note: Paths are placeholders as weights aren't committed

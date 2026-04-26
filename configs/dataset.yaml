@@ -3,5 +3,5 @@
 
 dataset:
   raw_frames: data/raw_frames
-  aligned_faces: data/aligned_faces
-  gallery_embeddings: data/gallery_embeddings.npy
+  aligned_faces: data/aligned_faces_100px
+  gallery_embeddings: data/gallery_embeddings_100px.npy

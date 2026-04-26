@@ -1,0 +1,18 @@
+# TensorRT Execution Provider Configuration
+# Used by SCRFDDetector and AdaFaceRecognizer when device: cuda
+
+tensorrt:
+  # Enable FP16 precision — ~2x speedup, negligible accuracy drop for face recognition
+  fp16: true
+
+  # Engine cache — TRT compiles the engine on first run (~60-120s), then caches it.
+  # Subsequent runs load instantly from cache. Delete cache if you change GPU or TRT version.
+  engine_cache_enable: true
+  engine_cache_path: "./trt_cache"
+
+  # GPU memory budget for TRT optimizer (bytes). 2 GB is safer for SCRFD + AdaFace.
+  max_workspace_size: 2147483648
+
+  # DLA (Deep Learning Accelerator) — only available on Jetson, keep false on desktop GPUs
+  dla_enable: false
+  dla_core: 0
