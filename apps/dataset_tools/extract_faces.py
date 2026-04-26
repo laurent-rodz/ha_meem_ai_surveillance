@@ -110,12 +110,15 @@ def main():
                 # Crop face region
                 x1, y1, x2, y2 = face.bbox[:4].astype(int)
                 
-                # Maintain image bounds
-                h, w = frame.shape[:2]
-                x1, y1 = max(0, x1), max(0, y1)
-                x2, y2 = min(w, x2), min(h, y2)
-                
-                face_crop = frame[y1:y2, x1:x2]
+                if face.kps is not None:
+                    from insightface.utils import face_align
+                    face_crop = face_align.norm_crop(frame, face.kps)
+                else:
+                    # Maintain image bounds
+                    h, w = frame.shape[:2]
+                    x1, y1 = max(0, x1), max(0, y1)
+                    x2, y2 = min(w, x2), min(h, y2)
+                    face_crop = frame[y1:y2, x1:x2]
                 
                 if face_crop.size == 0:
                     continue

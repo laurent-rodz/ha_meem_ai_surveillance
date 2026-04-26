@@ -67,3 +67,6 @@ whatsapp_session/
 
 # TensorRT engine cache
 /trt_cache/
+
+#Scripts
+scripts/

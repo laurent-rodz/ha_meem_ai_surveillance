@@ -93,11 +93,18 @@ def run_pipeline():
                 
             # Blur Rejection
             x1, y1, x2, y2 = face.bbox[:4].astype(int)
-            face_img = frame[max(0, y1):y2, max(0, x1):x2]
+            bbox_crop = frame[max(0, y1):y2, max(0, x1):x2]
             
-            face.blur_score = calculate_blur_score(face_img)
+            face.blur_score = calculate_blur_score(bbox_crop)
             if face.blur_score < config['recognition']['blur_threshold']: # Threshold should be in config
                 continue
+                
+            # Face Alignment
+            if face.kps is not None:
+                from insightface.utils import face_align
+                face_img = face_align.norm_crop(frame, face.kps)
+            else:
+                face_img = bbox_crop
                 
             # 3. Recognition (Feature Extraction)
             face.embedding = recognizer.extract_embedding(face_img)
