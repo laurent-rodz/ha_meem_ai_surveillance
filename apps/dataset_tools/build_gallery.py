@@ -76,7 +76,7 @@ def main():
 
     for person_path in subdirs:
         person_id = person_path.name
-        person_embeddings = []
+        person_imgs = []
         
         # 5. Process each image in the person folder
         for img_path in person_path.iterdir():
@@ -87,19 +87,15 @@ def main():
             if img is None:
                 continue
                 
-            # Extract embedding using AdaFace
-            embedding = recognizer.extract_embedding(img)
-            person_embeddings.append(embedding)
+            person_imgs.append(img)
             total_images_used += 1
 
-        if person_embeddings:
-            # normalize each embedding individually
-            normalized_embeddings = []
-            for emb in person_embeddings:
-                norm = np.linalg.norm(emb)
-                if norm > 0:
-                    emb = emb / norm
-                normalized_embeddings.append(emb)
+        if person_imgs:
+            # Extract and normalize embeddings using batch processing
+            person_embeddings = recognizer.extract_embeddings_batch(person_imgs)
+            
+            # normalize each embedding individually is already handled by batch method!
+            normalized_embeddings = list(person_embeddings)
 
             # limit to max 10 embeddings per person (for efficiency)
             MAX_EMB = 10

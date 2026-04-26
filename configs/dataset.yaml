@@ -4,4 +4,4 @@
 dataset:
   raw_frames: data/raw_frames
   aligned_faces: data/aligned_faces_60px_aligned
-  gallery_embeddings: data/gallery_embeddings_60px_aligned.npy
+  gallery_embeddings: data/gallery_embeddings_60px_aligneddd.npy

@@ -45,7 +45,10 @@ class AdaFaceRecognizer(BaseRecognizer):
                 "CPUExecutionProvider",
             ]
 
-        self.session = ort.InferenceSession(model_path, providers=providers)
+        sess_options = ort.SessionOptions()
+        sess_options.log_severity_level = 3  # 0:Verbose, 1:Info, 2:Warning, 3:Error, 4:Fatal
+
+        self.session = ort.InferenceSession(model_path, sess_options=sess_options, providers=providers)
         self.input_name = self.session.get_inputs()[0].name
         self.input_shape = (112, 112)  # Standard AdaFace / ArcFace input size
 
@@ -72,3 +75,20 @@ class AdaFaceRecognizer(BaseRecognizer):
         if norm > 0:
             embedding = embedding / norm
         return embedding
+
+    def extract_embeddings_batch(self, face_imgs: list) -> np.ndarray:
+        """Extract and L2-normalize 512-d face embeddings for a batch of images."""
+        if not face_imgs:
+            return np.array([])
+            
+        # _preprocess adds a batch dim, so we concatenate them along axis 0
+        batch = np.concatenate([self._preprocess(img) for img in face_imgs], axis=0)
+        outputs = self.session.run(None, {self.input_name: batch})
+        embeddings = outputs[0]
+
+        # L2-normalize each embedding in the batch
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1e-10
+        embeddings = embeddings / norms
+        
+        return embeddings

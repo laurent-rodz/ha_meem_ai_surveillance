@@ -87,6 +87,9 @@ class CameraWorker(threading.Thread):
                     del self.aggregator.track_buffers[track_id]
                     self.decided_tracks.discard(track_id)
                     
+            valid_faces = []
+            valid_face_imgs = []
+            
             for face in tracked_faces:
                 # Operational Constraints: Resolution Gate
                 if face.width < self.config['recognition']['min_face_size']:
@@ -107,66 +110,76 @@ class CameraWorker(threading.Thread):
                 else:
                     face_img = bbox_crop
                     
-                # 3. Recognition (Feature Extraction)
-                # Thread-safe ONNX call
-                face.embedding = self.recognizer.extract_embedding(face_img)
+                valid_faces.append(face)
+                valid_face_imgs.append(face_img)
+
+            # 3. Recognition (Feature Extraction) - Batched
+            if valid_face_imgs:
+                embeddings = self.recognizer.extract_embeddings_batch(valid_face_imgs)
                 
-                # 4. Fusion (Aggregation)
-                self.aggregator.add_face(face)
-                
-                # Get consensus
-                consensus_emb = self.aggregator.get_aggregated_embedding(face.track_id)
-                
-                if consensus_emb is not None and face.track_id not in self.decided_tracks:
-                    identity, score = self.face_db.match(
-                        consensus_emb, 
-                        self.config['recognition']['similarity_threshold']
-                    )
+                for face, embedding in zip(valid_faces, embeddings):
+                    face.embedding = embedding
                     
-                    current_time = time.time()
+                    # 4. Fusion (Aggregation)
+                    self.aggregator.add_face(face)
                     
-                    event_emitted = False
+                    # Get consensus
+                    consensus_emb = self.aggregator.get_aggregated_embedding(face.track_id)
                     
-                    # Check for cooldown if authorized
-                    can_emit = True
-                    if identity is not None:
-                        last_seen = self.identity_last_seen.get(identity, 0)
-                        if current_time - last_seen < self.identity_cooldown_seconds:
-                            can_emit = False
-                    
-                    if can_emit:
-                        # 1. Create a single source of truth for time
-                        event_time = datetime.now()
+                    if consensus_emb is not None and face.track_id not in self.decided_tracks:
+                        identity, score = self.face_db.match(
+                            consensus_emb, 
+                            self.config['recognition']['similarity_threshold']
+                        )
                         
-                        # 2. Create event object
-                        event_data = {
-                            "timestamp": event_time.isoformat(),
-                            "camera_id": self.camera_id,
-                            "track_id": face.track_id,
-                            "identity": identity,
-                            "score": float(score),
-                            "event": "AUTHORIZED" if identity else "UNKNOWN"
-                        }
+                        current_time = time.time()
                         
-                        # 3. Capture and save snapshot
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(frame, identity or "UNKNOWN", (x1, y1 - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                        snapshot_path = self.snapshot_writer.save(frame, identity, timestamp=event_time)
-                        event_data["snapshot"] = snapshot_path
+                        event_emitted = False
                         
-                        # 4. Emit event
-                        print(f"[{self.camera_id}] {event_data['event']}: {identity if identity else 'Unknown'} ({score:.3f})")
-                        self.event_emitter.emit(event_data)
-                        
+                        # Check for cooldown if authorized
+                        can_emit = True
                         if identity is not None:
-                            self.identity_last_seen[identity] = current_time
-                        event_emitted = True
-                    
-                    if event_emitted:
-                        self.decided_tracks.add(face.track_id)
+                            last_seen = self.identity_last_seen.get(identity, 0)
+                            if current_time - last_seen < self.identity_cooldown_seconds:
+                                can_emit = False
+                        
+                        if can_emit:
+                            # 1. Create a single source of truth for time
+                            event_time = datetime.now()
+                            
+                            # 2. Create event object
+                            event_data = {
+                                "timestamp": event_time.isoformat(),
+                                "camera_id": self.camera_id,
+                                "track_id": face.track_id,
+                                "identity": identity,
+                                "score": float(score),
+                                "event": "AUTHORIZED" if identity else "UNKNOWN"
+                            }
+                            
+                            # 3. Capture and save snapshot
+                            # x1, y1, x2, y2 from face.bbox for snapshot bounding box
+                            x1, y1, x2, y2 = face.bbox[:4].astype(int)
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                            cv2.putText(frame, identity or "UNKNOWN", (x1, y1 - 10),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                            snapshot_path = self.snapshot_writer.save(frame, identity, timestamp=event_time)
+                            event_data["snapshot"] = snapshot_path
+                            
+                            # 4. Emit event
+                            print(f"[{self.camera_id}] {event_data['event']}: {identity if identity else 'Unknown'} ({score:.3f})")
+                            self.event_emitter.emit(event_data)
+                            
+                            if identity is not None:
+                                self.identity_last_seen[identity] = current_time
+                            event_emitted = True
+                        
+                        if event_emitted:
+                            self.decided_tracks.add(face.track_id)
                 
+            for face in tracked_faces:
                 # 5. Visualization (Simplified)
+                x1, y1, x2, y2 = face.bbox[:4].astype(int)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"ID: {face.track_id}", (x1, y1 - 10), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
