@@ -17,7 +17,7 @@ A professional-grade AI surveillance system for real-time inference and data man
 
 ### 1. External Software
 - **Python 3.10.11**: [Download here](https://www.python.org/downloads/release/python-31011/)
-- **Visual Studio Build Tools**: [Download here](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (Required for compiling certain C++ dependencies).
+- **Visual Studio Build Tools**: [Download here](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 - **CUDA Toolkit 12.6**: [Download Archive](https://developer.nvidia.com/cuda-12-6-0-download-archive).
 - **cuDNN 9.10.0**: [Direct Download](https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/windows-x86_64/cudnn-windows-x86_64-9.10.0.56_cuda12-archive.zip).
 
