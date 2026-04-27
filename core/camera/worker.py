@@ -84,7 +84,7 @@ class CameraWorker(threading.Thread):
             active_track_ids = set(face.track_id for face in tracked_faces)
             for track_id in list(self.aggregator.track_buffers.keys()):
                 if track_id not in active_track_ids:
-                    del self.aggregator.track_buffers[track_id]
+                    self.aggregator.clear_track(track_id)
                     self.decided_tracks.discard(track_id)
                     
             valid_faces = []

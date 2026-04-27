@@ -9,9 +9,7 @@ class Face:
     kps: Optional[np.ndarray] = None  # [5, 2] landmarks
     embedding: Optional[np.ndarray] = None  # 512-d normalized embedding
     track_id: Optional[int] = None
-    quality_score: float = 0.0
     blur_score: float = 0.0
-    timestamp: float = 0.0
 
     @property
     def width(self) -> float:

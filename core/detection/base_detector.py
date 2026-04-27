@@ -8,7 +8,6 @@ class BaseDetector(ABC):
     
     def __init__(self, config: dict):
         self.config = config
-        self.min_confidence = config.get("detection", {}).get("confidence", 0.5)
         self.device = config.get("pipeline", {}).get("device", "cuda")
 
     @abstractmethod

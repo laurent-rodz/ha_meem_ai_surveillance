@@ -1,6 +1,5 @@
 import os
 import cv2
-import yaml
 import sys
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 from core.detection import SCRFDDetector
-from core.config import load_config, load_merged_configs
+from core.config import load_merged_configs
 
 
 def main():

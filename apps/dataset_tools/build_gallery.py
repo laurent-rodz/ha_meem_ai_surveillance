@@ -1,6 +1,5 @@
 import os
 import cv2
-import yaml
 import sys
 import numpy as np
 from pathlib import Path
@@ -89,14 +88,14 @@ def main():
             persons_processed += 1
             print(f"Processed: {person_id:20} | Images: {len(person_embeddings):3d}")
 
-    # 8. Save results
+    # 6. Save results
     output_path = Path(dataset_cfg.get('gallery_embeddings', 'dataset/gallery_embeddings.npy'))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Save as dictionary
     np.save(str(output_path), gallery)
 
-    # 9. Console Summary
+    # 7. Console Summary
     print("-" * 40)
     print("Gallery Build Summary:")
     print(f"Persons processed: {persons_processed}")

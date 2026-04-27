@@ -38,9 +38,9 @@ def read_events(limit: int = 200, last_n: Optional[int] = None) -> List[dict]:
     # If last_n is specified, take from the end
     if last_n:
         return events[-last_n:]
-    
-    # Otherwise return up to limit
-    return events[:limit]
+
+    # Otherwise return the most recent `limit` lines
+    return events[-limit:]
 
 @app.get("/")
 def root():

@@ -17,7 +17,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import TimeoutException
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -103,39 +103,6 @@ def _retry_present(driver, locator, label: str,
             if attempt < retries:
                 time.sleep(1.5)
     return None
-
-
-def _find_caption(driver, timeout=6):
-    for xp in CAPTION_XPATHS:
-        try:
-            els = WebDriverWait(driver, timeout).until(
-                EC.presence_of_all_elements_located((By.XPATH, xp))
-            )
-            for el in els:
-                if el.is_displayed():
-                    log.debug(f"Caption found: {xp}")
-                    return el
-        except TimeoutException:
-            continue
-        except Exception as e:
-            log.debug(f"Caption XPath error: {e}")
-    return None
-
-
-def _type_caption(driver, el, message: str):
-    driver.execute_script("arguments[0].focus(); arguments[0].click();", el)
-    time.sleep(0.3)
-    # Select all and delete instead of clear() — more reliable on contenteditable
-    el.send_keys(Keys.CONTROL + "a")
-    el.send_keys(Keys.DELETE)
-    time.sleep(0.2)
-    lines = message.split("\n")
-    for i, line in enumerate(lines):
-        el.send_keys(line)
-        if i < len(lines) - 1:
-            el.send_keys(Keys.SHIFT + Keys.ENTER)
-    time.sleep(0.4)
-    log.debug("Caption typed")
 
 
 def _dismiss_dialogs(driver):

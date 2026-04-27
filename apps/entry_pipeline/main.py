@@ -1,12 +1,11 @@
 import cv2
-import yaml
 import time
 import os
 from datetime import datetime
 import numpy as np
 
 from core.events import EventEmitter, SnapshotWriter
-from core.detection import SCRFDDetector, Face
+from core.detection import SCRFDDetector
 from core.tracking import ByteTracker
 from core.recognition import AdaFaceRecognizer
 from core.fusion import EmbeddingAggregator
@@ -76,7 +75,7 @@ def run_pipeline():
         active_track_ids = set(face.track_id for face in tracked_faces)
         for track_id in list(aggregator.track_buffers.keys()):
             if track_id not in active_track_ids:
-                del aggregator.track_buffers[track_id]
+                aggregator.clear_track(track_id)
                 decided_tracks.discard(track_id)
                 
         valid_faces = []
@@ -92,7 +91,7 @@ def run_pipeline():
             bbox_crop = frame[max(0, y1):y2, max(0, x1):x2]
             
             face.blur_score = calculate_blur_score(bbox_crop)
-            if face.blur_score < config['recognition']['blur_threshold']: # Threshold should be in config
+            if face.blur_score < config['recognition']['blur_threshold']:
                 continue
                 
             # Face Alignment

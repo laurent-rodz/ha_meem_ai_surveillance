@@ -1,5 +1,4 @@
 import cv2
-import yaml
 import time
 import numpy as np
 import math

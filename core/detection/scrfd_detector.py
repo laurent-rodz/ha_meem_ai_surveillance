@@ -7,7 +7,6 @@ if sys.platform == "win32":
     if os.path.isdir(trt_lib_dir) and trt_lib_dir not in os.environ.get("PATH", ""):
         os.environ["PATH"] = trt_lib_dir + os.pathsep + os.environ.get("PATH", "")
 
-import cv2
 import numpy as np
 import onnxruntime as ort
 from typing import List
@@ -33,19 +32,21 @@ class SCRFDDetector(BaseDetector):
         cache_path = trt_cfg.get("engine_cache_path", "./trt_cache")
         os.makedirs(cache_path, exist_ok=True)
 
-        trt_provider_options = {
-            "trt_fp16_enable": trt_cfg.get("fp16", True),
-            "trt_engine_cache_enable": trt_cfg.get("engine_cache_enable", True),
-            "trt_engine_cache_path": cache_path,
-            "trt_max_workspace_size": trt_cfg.get("max_workspace_size", 1073741824),
-            "trt_dla_enable": trt_cfg.get("dla_enable", False),
-        }
-
-        providers = [
-            ("TensorrtExecutionProvider", trt_provider_options),
-            ("CUDAExecutionProvider", {"device_id": 0}),
-            "CPUExecutionProvider",
-        ]
+        if self.device == "cpu":
+            providers = ["CPUExecutionProvider"]
+        else:
+            trt_provider_options = {
+                "trt_fp16_enable": trt_cfg.get("fp16", True),
+                "trt_engine_cache_enable": trt_cfg.get("engine_cache_enable", True),
+                "trt_engine_cache_path": cache_path,
+                "trt_max_workspace_size": trt_cfg.get("max_workspace_size", 1073741824),
+                "trt_dla_enable": trt_cfg.get("dla_enable", False),
+            }
+            providers = [
+                ("TensorrtExecutionProvider", trt_provider_options),
+                ("CUDAExecutionProvider", {"device_id": 0}),
+                "CPUExecutionProvider",
+            ]
 
         # Load the insightface SCRFD wrapper (handles anchor decode, NMS, kps)
         self.detector = get_model(model_path)

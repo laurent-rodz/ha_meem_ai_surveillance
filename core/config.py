@@ -39,10 +39,6 @@ def _apply_env_overrides(config):
     overrides = {
         "CAMERA_01_URL": ("cameras", 0, "url"),
         "CAMERA_02_URL": ("cameras", 1, "url"),
-        "WHATSAPP_PHONE_NUMBER": ("whatsapp", "phone_number"), # Example
-        "WHATSAPP_API_URL": ("whatsapp", "api_url"),
-        "API_HOST": ("api", "host"),
-        "API_PORT": ("api", "port"),
     }
 
     for env_var, path in overrides.items():
