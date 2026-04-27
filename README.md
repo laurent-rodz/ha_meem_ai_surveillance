@@ -66,7 +66,12 @@ Follow these steps in order to set up your face recognition database and start t
    py -m apps.entry_pipeline.main
    ```
 
-4. **Other Components**:
+4. **Multi-Camera Pipeline**: Starts the surveillance system across all enabled cameras defined in `configs/cameras.yaml` in a grid view.
+   ```bash
+   py -m apps.multi_pipeline.main
+   ```
+
+5. **Other Components**:
 
    - **API Server**: `py -m apps.api_server.main`
    - **WhatsApp Bot**: `py -m apps.alert_bot.whatsapp_bot`

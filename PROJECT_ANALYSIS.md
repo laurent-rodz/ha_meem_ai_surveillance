@@ -243,43 +243,43 @@ Replace the "read entire file on every request" pattern in `api_server/main.py`:
 
 ## 5. Technology Replacement Summary
 
-| Component | Current | Recommended Upgrade | Effort |
-|---|---|---|---|
-| Tracker | Custom IOU | **ByteTrack** (via `supervision`) | 1–2h |
-| Alert Delivery | Selenium WhatsApp | **Telegram Bot API** or Twilio | 2–4h |
-| Vector Search | NumPy linear scan | **FAISS** (GPU) | 2–3h |
-| Pipeline threading | Single thread | Producer/consumer threads | 4–8h |
-| Event storage | JSONL flat file | **SQLite** + SQLAlchemy | 4–6h |
-| Face alignment | Raw bbox crop | `insightface.norm_crop` (already installed) | 1h |
-| Buffer structure | `list.pop(0)` | `collections.deque` | 30min |
-| Fusion strategy | Equal mean pool | Quality-weighted mean | 1h |
-| Docker base image | CUDA 12.1 | CUDA 12.6 (match deployment) | 15min |
+| Component | Current | Recommended Upgrade | Effort | Status |
+|---|---|---|---|---|
+| Tracker | Custom IOU | **ByteTrack** (via `supervision`) | 1–2h | ✅ Done |
+| Alert Delivery | Selenium WhatsApp | **Telegram Bot API** or Twilio | 2–4h | ❌ Pending |
+| Vector Search | NumPy linear scan | **FAISS** (GPU) | 2–3h | ✅ Done |
+| Pipeline threading | Single thread | Producer/consumer threads | 4–8h | ✅ Done |
+| Event storage | JSONL flat file | **SQLite** + SQLAlchemy | 4–6h | ❌ Pending |
+| Face alignment | Raw bbox crop | `insightface.norm_crop` (already installed) | 1h | ✅ Done |
+| Buffer structure | `list.pop(0)` | `collections.deque` | 30min | ❌ Pending |
+| Fusion strategy | Equal mean pool | Quality-weighted mean | 1h | ❌ Pending |
+| Docker base image | CUDA 12.1 | CUDA 12.6 (match deployment) | 15min | ✅ Done |
 
 ---
 
 ## 6. Recommended Implementation Order
 
-```
+```text
 Phase 1 — Accuracy (Week 1)
-  ├── 4.1  Face alignment with kps            ← biggest accuracy gain
-  ├── 4.2  Fix similarity stubs
-  └── 4.10 deque buffer fix
+  ├── [x] 4.1  Face alignment with kps            ← biggest accuracy gain
+  ├── [ ] 4.2  Fix similarity stubs
+  └── [ ] 4.10 deque buffer fix
 
 Phase 2 — Reliability (Week 2)
-  ├── 4.3  ByteTrack integration
-  ├── 4.4  Telegram/Twilio alert bot
-  └── 4.12 Fix Dockerfile
+  ├── [x] 4.3  ByteTrack integration
+  ├── [ ] 4.4  Telegram/Twilio alert bot
+  └── [x] 4.12 Fix Dockerfile
 
 Phase 3 — Performance (Week 3)
-  ├── 4.5  Threaded pipeline
-  ├── 4.6  Batch recognition
-  ├── 4.11 Quality-weighted fusion
-  └── 4.13 Centralized config loader
+  ├── [x] 4.5  Threaded pipeline
+  ├── [x] 4.6  Batch recognition
+  ├── [ ] 4.11 Quality-weighted fusion
+  └── [ ] 4.13 Centralized config loader
 
 Phase 4 — Scale (Before 20-camera rollout)
-  ├── 4.7  FAISS index
-  ├── 4.8  Redis event bus
-  └── 4.9  SQLite API backend
+  ├── [x] 4.7  FAISS index
+  ├── [ ] 4.8  Redis event bus
+  └── [ ] 4.9  SQLite API backend
 ```
 
 ---
