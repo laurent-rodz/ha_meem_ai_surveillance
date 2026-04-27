@@ -18,6 +18,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException, WebDriverException
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 
@@ -33,9 +37,9 @@ log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-API_URL         = "http://127.0.0.1:8000/events/latest?limit=1"
-POLL_INTERVAL   = 2          # seconds between polls
-PHONE_NUMBER    = "8801834341444"
+API_URL         = os.getenv("WHATSAPP_API_URL", "http://127.0.0.1:8000/events/latest?limit=1")
+POLL_INTERVAL   = int(os.getenv("WHATSAPP_POLL_INTERVAL", 2))
+PHONE_NUMBER    = os.getenv("WHATSAPP_PHONE_NUMBER", "8801234567890")
 USER_DATA_DIR   = os.path.abspath("whatsapp_session")
 
 # Per-step Selenium timeouts / retry counts

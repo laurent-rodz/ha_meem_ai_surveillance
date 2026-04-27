@@ -9,20 +9,18 @@ from core.detection import SCRFDDetector
 from core.recognition import AdaFaceRecognizer
 from core.database import FaceDatabase
 from core.camera.worker import CameraWorker
-
-def load_config(config_path):
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+from core.config import load_config, load_merged_configs
 
 def run_pipeline():
-    # Load configs
-    default_cfg = load_config('configs/default.yaml')
-    camera_cfg = load_config('configs/cameras.yaml')
-    threshold_cfg = load_config('configs/thresholds.yaml')
-    dataset_cfg = load_config('configs/dataset.yaml')
+    # Load and merge configs
+    config = load_merged_configs([
+        'configs/default.yaml',
+        'configs/thresholds.yaml',
+        'configs/tensorrt.yaml'
+    ])
     
-    # Merge configs
-    config = {**default_cfg, **threshold_cfg}
+    camera_cfg = load_config('configs/cameras.yaml')
+    dataset_cfg = load_config('configs/dataset.yaml')
     
     gallery_path = dataset_cfg['dataset']['gallery_embeddings']
     gallery_embeddings = np.load(gallery_path, allow_pickle=True).item()

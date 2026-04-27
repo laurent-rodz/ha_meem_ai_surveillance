@@ -3,10 +3,14 @@ import os
 from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="Ha-Meem AI Surveillance API")
 
-LOG_FILE = "logs/events.jsonl"
+LOG_FILE = os.getenv("LOG_FILE", "logs/events.jsonl")
 
 class SurveillanceEvent(BaseModel):
     timestamp: str
@@ -66,4 +70,6 @@ def get_all_events(limit: int = 200):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    host = os.getenv("API_HOST", "127.0.0.1")
+    port = int(os.getenv("API_PORT", 8000))
+    uvicorn.run(app, host=host, port=port)

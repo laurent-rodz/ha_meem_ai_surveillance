@@ -12,21 +12,17 @@ from core.recognition import AdaFaceRecognizer
 from core.fusion import EmbeddingAggregator
 from core.quality import calculate_blur_score
 from core.database import FaceDatabase
-
-
-def load_config(config_path):
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+from core.config import load_config, load_merged_configs
 
 def run_pipeline():
-    # Load configs
-    default_cfg = load_config('configs/default.yaml')
+    # Load and merge configs
+    config = load_merged_configs([
+        'configs/default.yaml',
+        'configs/thresholds.yaml',
+        'configs/tensorrt.yaml'
+    ])
+    
     camera_cfg = load_config('configs/cameras.yaml')
-    threshold_cfg = load_config('configs/thresholds.yaml')
-    trt_cfg = load_config('configs/tensorrt.yaml')
-
-    # Merge configs — tensorrt section is picked up by detector/recognizer __init__
-    config = {**default_cfg, **threshold_cfg, **trt_cfg}
     
     # Initialize components
     # Note: Paths are placeholders as weights aren't committed
@@ -50,13 +46,13 @@ def run_pipeline():
     cap = cv2.VideoCapture(camera_cfg['cameras'][0]['url'])
     
     event_emitter = EventEmitter(
-        camera_id="cam_01",
-        log_file="logs/events.jsonl"
+        camera_id=camera_cfg['cameras'][0]['id'],
+        log_file=os.getenv("LOG_FILE", "logs/events.jsonl")
     )
     
     snapshot_writer = SnapshotWriter(
         base_dir="snapshots",
-        camera_id="cam_01"
+        camera_id=camera_cfg['cameras'][0]['id']
     )
     
     decided_tracks = set()
@@ -149,7 +145,7 @@ def run_pipeline():
                         # 2. Create event object
                         event_data = {
                             "timestamp": event_time.isoformat(),
-                            "camera_id": "cam_01",
+                            "camera_id": camera_cfg['cameras'][0]['id'],
                             "track_id": face.track_id,
                             "identity": identity,
                             "score": float(score),

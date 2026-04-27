@@ -3,11 +3,11 @@
 
 cameras:
   - id: camera_01
-    url: rtsp://admin:admin123@175.29.168.110:6222/cam/realmonitor?channel=31&subtype=0
+    url: ${CAMERA_01_URL}
     name: Front Entrance
     enabled: true
 
   - id: camera_02
-    url: rtsp://admin:admin123@175.29.168.110:6222/cam/realmonitor?channel=32&subtype=0
+    url: ${CAMERA_02_URL}
     name: Back Exit
     enabled: false

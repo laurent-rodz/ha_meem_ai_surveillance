@@ -8,31 +8,16 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 from core.detection import SCRFDDetector
+from core.config import load_config, load_merged_configs
 
-def load_config():
-    """Load and merge configuration files identically to main pipeline."""
-    def _read_yaml(path):
-        if not os.path.exists(path):
-            return {}
-        with open(path, 'r') as f:
-            return yaml.safe_load(f)
-    
-    config = _read_yaml('configs/default.yaml')
-    thresholds = _read_yaml('configs/thresholds.yaml')
-    dataset = _read_yaml('configs/dataset.yaml')
-    
-    config.update(thresholds)
-    if dataset:
-        if 'dataset' in config:
-            config['dataset'].update(dataset.get('dataset', {}))
-        else:
-            config.update(dataset)
-            
-    return config
 
 def main():
     # Load settings
-    config = load_config()
+    config = load_merged_configs([
+        'configs/default.yaml',
+        'configs/thresholds.yaml',
+        'configs/dataset.yaml'
+    ])
     
     # Paths according to requirements or config
     dataset_cfg = config.get('dataset', {})
