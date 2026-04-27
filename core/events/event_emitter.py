@@ -29,4 +29,3 @@ class EventEmitter:
         """Append the event data as a JSON line to the log file."""
         with open(self.log_file, 'a', buffering=1) as f:
             f.write(json.dumps(event_data, cls=NumpyEncoder) + "\n")
-

@@ -1,5 +1,6 @@
 # Dataset configuration for external storage paths.
 # Ensure these paths point to your actual data storage outside the repository.
+# Used extensively by apps.dataset_tools to extract faces and build the gallery.
 
 dataset:
   raw_frames: data/raw_frames

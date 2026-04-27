@@ -1,9 +1,12 @@
 # Detection and Recognition thresholds
+# Crucial parameters that dictate the strictness of the face recognition logic
+
 detection:
-  confidence: 0.4
-  iou: 0.4
+  confidence: 0.4  # Minimum SCRFD confidence score to consider a face valid
+  iou: 0.4         # Intersection Over Union threshold for NMS and tracking
+
 recognition:
-  similarity_threshold: 0.55
-  min_face_size: 80
-  blur_threshold: 100
-  min_frames_for_decision: 6
+  similarity_threshold: 0.55  # Cosine similarity threshold for AdaFace matching. Higher = stricter.
+  min_face_size: 80           # Resolution gate: Minimum width of face bbox in pixels.
+  blur_threshold: 100         # Quality gate: Minimum Laplacian variance. Faces below this are rejected as blurry.
+  min_frames_for_decision: 6  # Multi-frame fusion: Minimum consecutive tracked frames needed before identifying.

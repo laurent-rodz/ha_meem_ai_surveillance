@@ -27,4 +27,3 @@ class SnapshotWriter:
         
         # 4. Return the snapshot path using forward slashes
         return save_path.as_posix()
-
