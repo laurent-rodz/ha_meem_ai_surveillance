@@ -20,9 +20,8 @@ def run_pipeline():
     ])
     
     camera_cfg = load_config('configs/cameras.yaml')
-    dataset_cfg = load_config('configs/dataset.yaml')
-    
-    gallery_path = dataset_cfg['dataset']['gallery_embeddings']
+
+    gallery_path = config['dataset']['gallery_embeddings']
     gallery_embeddings = np.load(gallery_path, allow_pickle=True).item()
     
     # Initialize shared components (thread-safe for inference)

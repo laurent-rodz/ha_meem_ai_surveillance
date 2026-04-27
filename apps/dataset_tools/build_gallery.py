@@ -16,8 +16,7 @@ def main():
     # 1. Load config
     config = load_merged_configs([
         'configs/default.yaml',
-        'configs/thresholds.yaml',
-        'configs/dataset.yaml'
+        'configs/thresholds.yaml'
     ])
     
     # 2. Get dataset paths

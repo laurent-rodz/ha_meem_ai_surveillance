@@ -44,8 +44,7 @@ A professional-grade AI surveillance system for real-time inference and data man
 4. **Configuration (Mandatory)**:
    Update the absolute data paths in the following files to match your local setup:
    - **`configs/cameras.yaml`**: Update `url` for RTSP streams or local video files.
-   - **`configs/dataset.yaml`**: Update `raw_frames`, `aligned_faces`, and `gallery_embeddings` paths.
-   - **`configs/default.yaml`**: Update the `models` paths to point to your `.onnx` files.
+   - **`configs/default.yaml`**: Update the `models` paths to point to your `.onnx` files, and the `dataset` paths for raw frames and embeddings.
 
 ## Running the System
 

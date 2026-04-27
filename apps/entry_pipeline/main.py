@@ -34,10 +34,7 @@ def run_pipeline():
         min_frames=config['recognition']['min_frames_for_decision']
     )
     
-    dataset_cfg = load_config('configs/dataset.yaml')
-
-    gallery_path = dataset_cfg['dataset']['gallery_embeddings']
-
+    gallery_path = config['dataset']['gallery_embeddings']
     gallery_embeddings = np.load(gallery_path, allow_pickle=True).item()
 
     face_db = FaceDatabase(gallery_embeddings)

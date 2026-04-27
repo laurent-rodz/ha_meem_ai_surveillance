@@ -7,7 +7,7 @@ This project utilizes an externalized data strategy to maintain repository perfo
 Datasets must reside outside the core repository and are linked via the configuration system. This allows for flexible scaling and easier sharing of model-ready assets across different environments.
 
 ### Data Path Configuration
-Update the absolute paths in **`configs/dataset.yaml`** to point to your local storage:
+Update the absolute paths in **`configs/default.yaml`** to point to your local storage:
 
 | Asset Type | Default Path | Description |
 | :--- | :--- | :--- |

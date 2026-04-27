@@ -12,3 +12,10 @@ logging:
 models:
   scrfd_onnx: models/scrfd_10g_bnkps.onnx  # Path to the SCRFD Face Detection ONNX model
   adaface_onnx: models/adaface.onnx        # Path to the AdaFace Recognition ONNX model
+
+# Dataset paths — used by apps/dataset_tools to extract faces and build the gallery.
+# Ensure these paths point to your actual data storage outside the repository.
+dataset:
+  raw_frames: data/raw_frames
+  aligned_faces: data/aligned_faces_80px_aligned
+  gallery_embeddings: data/gallery_embeddings_80px_faiss.npy
