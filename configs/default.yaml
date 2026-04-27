@@ -3,7 +3,7 @@
 
 pipeline:
   device: cuda     # Target compute device ('cuda' for GPU or 'cpu' for testing)
-  precision: fp16  # Inference precision ('fp16' or 'fp32'). fp16 requires tensorrt.
+  precision: fp32  # Inference precision ('fp16' or 'fp32'). fp16 requires tensorrt.
   batch_size: 15   # Maximum batch size for AdaFace embedding extraction
 
 logging:

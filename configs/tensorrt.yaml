@@ -2,6 +2,9 @@
 # Used by SCRFDDetector and AdaFaceRecognizer when device: cuda
 
 tensorrt:
+  # Global toggle for TensorRT. Set to false if you have compatibility issues with your GPU.
+  enabled: true
+
   # Enable FP16 precision — ~2x speedup, negligible accuracy drop for face recognition
   fp16: true
 

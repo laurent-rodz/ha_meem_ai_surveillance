@@ -15,7 +15,8 @@ def main():
     # 1. Load config
     config = load_merged_configs([
         'configs/default.yaml',
-        'configs/thresholds.yaml'
+        'configs/thresholds.yaml',
+        'configs/tensorrt.yaml'
     ])
     
     # 2. Get dataset paths

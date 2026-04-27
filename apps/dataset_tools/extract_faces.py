@@ -14,7 +14,8 @@ def main():
     # Load settings
     config = load_merged_configs([
         'configs/default.yaml',
-        'configs/thresholds.yaml'
+        'configs/thresholds.yaml',
+        'configs/tensorrt.yaml'
     ])
     
     # Paths according to requirements or config

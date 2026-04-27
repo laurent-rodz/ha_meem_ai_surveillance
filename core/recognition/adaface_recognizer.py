@@ -32,18 +32,19 @@ class AdaFaceRecognizer(BaseRecognizer):
         if self.device == "cpu":
             providers = ["CPUExecutionProvider"]
         else:
-            trt_provider_options = {
-                "trt_fp16_enable": trt_cfg.get("fp16", True),
-                "trt_engine_cache_enable": trt_cfg.get("engine_cache_enable", True),
-                "trt_engine_cache_path": cache_path,
-                "trt_max_workspace_size": trt_cfg.get("max_workspace_size", 1073741824),
-                "trt_dla_enable": trt_cfg.get("dla_enable", False),
-            }
-            providers = [
-                ("TensorrtExecutionProvider", trt_provider_options),
-                ("CUDAExecutionProvider", {"device_id": 0}),
-                "CPUExecutionProvider",
-            ]
+            providers = []
+            if trt_cfg.get("enabled", True):
+                trt_provider_options = {
+                    "trt_fp16_enable": trt_cfg.get("fp16", True),
+                    "trt_engine_cache_enable": trt_cfg.get("engine_cache_enable", True),
+                    "trt_engine_cache_path": cache_path,
+                    "trt_max_workspace_size": trt_cfg.get("max_workspace_size", 1073741824),
+                    "trt_dla_enable": trt_cfg.get("dla_enable", False),
+                }
+                providers.append(("TensorrtExecutionProvider", trt_provider_options))
+            
+            providers.append(("CUDAExecutionProvider", {"device_id": 0}))
+            providers.append("CPUExecutionProvider")
 
         sess_options = ort.SessionOptions()
         sess_options.log_severity_level = 3  # 0:Verbose, 1:Info, 2:Warning, 3:Error, 4:Fatal
