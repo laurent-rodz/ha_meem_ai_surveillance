@@ -47,7 +47,8 @@ def run_pipeline():
             detector=detector,
             recognizer=recognizer,
             face_db=face_db,
-            config=config
+            config=config,
+            resolution=cam_info.get('resolution')
         )
         worker.daemon = True
         worker.start()
@@ -58,8 +59,14 @@ def run_pipeline():
     # Display config
     grid_cols = math.ceil(math.sqrt(len(workers)))
     grid_rows = math.ceil(len(workers) / grid_cols)
-    cell_width = 640
-    cell_height = 360
+    
+    # Use first camera's resolution for grid, fallback to 640x360
+    if cameras and cameras[0].get('resolution'):
+        cell_width = cameras[0]['resolution']['width']
+        cell_height = cameras[0]['resolution']['height']
+    else:
+        cell_width = 960
+        cell_height = 540
     
     # Pre-allocate frames dict
     latest_frames = {worker.camera_id: np.zeros((cell_height, cell_width, 3), dtype=np.uint8) for worker in workers}

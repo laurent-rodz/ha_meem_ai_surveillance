@@ -11,10 +11,11 @@ from core.fusion import EmbeddingAggregator
 from core.quality import calculate_blur_score
 
 class CameraWorker(threading.Thread):
-    def __init__(self, camera_id, camera_url, detector, recognizer, face_db, config):
+    def __init__(self, camera_id, camera_url, detector, recognizer, face_db, config, resolution=None):
         super().__init__()
         self.camera_id = camera_id
         self.camera_url = camera_url
+        self.resolution = resolution
         
         # Shared Models
         self.detector = detector
@@ -52,6 +53,11 @@ class CameraWorker(threading.Thread):
         if self.cap is not None:
             self.cap.release()
         self.cap = cv2.VideoCapture(self.camera_url)
+        
+        if self.resolution:
+            print(f"[{self.camera_id}] Setting resolution to {self.resolution['width']}x{self.resolution['height']}")
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution['width'])
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution['height'])
         
     def _handle_reconnect(self):
         print(f"[{self.camera_id}] Stream read failed. Attempting reconnect in 2 seconds...")

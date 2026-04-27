@@ -6,8 +6,30 @@ cameras:
     url: ${CAMERA_01_URL}
     name: Front Entrance
     enabled: true
+    resolution:
+      width: 960
+      height: 540
 
   - id: camera_02
     url: ${CAMERA_02_URL}
     name: Back Exit
     enabled: false
+    resolution:
+      width: 960
+      height: 540
+
+  - id: camera_03
+    url: ${CAMERA_03_URL}
+    name: Internal_01
+    enabled: false
+    resolution:
+      width: 960
+      height: 540
+
+  - id: camera_04
+    url: ${CAMERA_04_URL}
+    name: Internal_02
+    enabled: false
+    resolution:
+      width: 960
+      height: 540
