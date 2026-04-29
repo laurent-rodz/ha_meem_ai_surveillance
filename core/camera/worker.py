@@ -164,8 +164,10 @@ class CameraWorker(threading.Thread):
                             }
                             
                             # 3. Capture and save snapshot
-                            # x1, y1, x2, y2 from face.bbox for snapshot bounding box
+                            # Store bbox [x1,y1,x2,y2] so report.py can crop without re-running SCRFD
                             x1, y1, x2, y2 = face.bbox[:4].astype(int)
+                            event_data["bbox"] = [x1, y1, x2, y2]
+                            
                             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                             cv2.putText(frame, identity or "UNKNOWN", (x1, y1 - 10),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)

@@ -17,9 +17,9 @@ models/*
 
 # Others
 /logs/
-/scripts/
 /snapshots/
 /trt_cache/
+/report_assets/
 
 # OS
 .DS_Store
