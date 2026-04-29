@@ -221,6 +221,7 @@ def generate_markdown_report(log_file):
     identities = {}
     auth_scores = []
     unknown_scores = []
+    unknowns = []
     hourly_activity = defaultdict(lambda: {'auth': 0, 'unknown': 0, 'total': 0})
     timestamps = []
 
@@ -274,6 +275,21 @@ def generate_markdown_report(log_file):
             unknown_count += 1
             unknown_scores.append(log['score'])
             hourly_activity[hour_key]['unknown'] += 1
+            unknowns.append({
+                'timestamp': dt,
+                'score': log.get('score', 0),
+                'snapshot': log.get('snapshot'),
+                'bbox': log.get('bbox'),
+                'track_id': log['track_id']
+            })
+
+    # Process top 10 unknowns by highest score (unique track_ids)
+    unknown_tracks = {}
+    for u in unknowns:
+        tid = u['track_id']
+        if tid not in unknown_tracks or u['score'] > unknown_tracks[tid]['score']:
+            unknown_tracks[tid] = u
+    top_unknowns = sorted(unknown_tracks.values(), key=lambda x: x['score'], reverse=True)[:10]
 
     # 4. Extract face crops for all required snapshots
     #    Build a dict { snapshot_path -> bbox_or_None } so the extractor
@@ -287,6 +303,11 @@ def generate_markdown_report(log_file):
         if data['max_snapshot']:
             if data['max_snapshot'] not in snapshots_needed:
                 snapshots_needed[data['max_snapshot']] = data.get('max_bbox')
+
+    for data in top_unknowns:
+        if data['snapshot']:
+            if data['snapshot'] not in snapshots_needed:
+                snapshots_needed[data['snapshot']] = data.get('bbox')
 
     face_output_dir = os.path.join(project_root, 'report_assets', 'faces')
     crop_map = extract_face_crops(snapshots_needed, project_root, face_output_dir)
@@ -407,6 +428,20 @@ def generate_markdown_report(log_file):
             f"| {img_max}<br>({score_max:.3f}) "
             f"| {window} |"
         )
+    print("\n---\n")
+
+    print("### **Top 10 Unauthorized Persons**\n")
+    print("| Rank | Time | Detection Score | Face |")
+    print("| :--- | :--- | :---: | :---: |")
+    for i in range(10):
+        if i < len(top_unknowns):
+            data = top_unknowns[i]
+            time_str = data['timestamp'].strftime('%H:%M:%S')
+            score = data['score']
+            img = format_img(data['snapshot'])
+            print(f"| **{i+1}** | {time_str} | {score:.3f} | {img} |")
+        else:
+            print(f"| **{i+1}** | - | - | - |")
 
 
 # ---------------------------------------------------------------------------
