@@ -251,8 +251,8 @@ Replace the "read entire file on every request" pattern in `api_server/main.py`:
 | Pipeline threading | Single thread | Producer/consumer threads | 4–8h | ✅ Done |
 | Event storage | JSONL flat file | **SQLite** + SQLAlchemy | 4–6h | ❌ Pending |
 | Face alignment | Raw bbox crop | `insightface.norm_crop` (already installed) | 1h | ✅ Done |
-| Buffer structure | `list.pop(0)` | `collections.deque` | 30min | ❌ Pending |
-| Fusion strategy | Equal mean pool | Quality-weighted mean | 1h | ❌ Pending |
+| Buffer structure | `list.pop(0)` | `collections.deque` | 30min | ✅ Done |
+| Fusion strategy | Equal mean pool | Quality-weighted mean | 1h | ✅ Done |
 | Docker base image | CUDA 12.1 | CUDA 12.6 (match deployment) | 15min | ✅ Done |
 
 ---
@@ -263,7 +263,7 @@ Replace the "read entire file on every request" pattern in `api_server/main.py`:
 Phase 1 — Accuracy (Week 1)
   ├── [x] 4.1  Face alignment with kps            ← biggest accuracy gain
   ├── [ ] 4.2  Fix similarity stubs
-  └── [ ] 4.10 deque buffer fix
+  ├── [x] 4.10 deque buffer fix
 
 Phase 2 — Reliability (Week 2)
   ├── [x] 4.3  ByteTrack integration
@@ -273,7 +273,7 @@ Phase 2 — Reliability (Week 2)
 Phase 3 — Performance (Week 3)
   ├── [x] 4.5  Threaded pipeline
   ├── [x] 4.6  Batch recognition
-  ├── [ ] 4.11 Quality-weighted fusion
+  ├── [x] 4.11 Quality-weighted fusion
   └── [ ] 4.13 Centralized config loader
 
 Phase 4 — Scale (Before 20-camera rollout)

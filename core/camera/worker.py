@@ -121,10 +121,11 @@ class CameraWorker(threading.Thread):
 
             # 3. Recognition (Feature Extraction) - Batched
             if valid_face_imgs:
-                embeddings = self.recognizer.extract_embeddings_batch(valid_face_imgs)
+                embeddings, norms = self.recognizer.extract_embeddings_batch(valid_face_imgs)
                 
-                for face, embedding in zip(valid_faces, embeddings):
+                for face, embedding, norm in zip(valid_faces, embeddings, norms):
                     face.embedding = embedding
+                    face.feature_norm = norm
                     
                     # 4. Fusion (Aggregation)
                     self.aggregator.add_face(face)

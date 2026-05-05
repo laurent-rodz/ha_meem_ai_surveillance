@@ -8,6 +8,7 @@ class Face:
     bbox: np.ndarray  # [x1, y1, x2, y2, confidence]
     kps: Optional[np.ndarray] = None  # [5, 2] landmarks
     embedding: Optional[np.ndarray] = None  # 512-d normalized embedding
+    feature_norm: float = 0.0  # Raw feature norm for quality-weighted fusion
     track_id: Optional[int] = None
     blur_score: float = 0.0
 

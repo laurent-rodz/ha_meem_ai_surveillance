@@ -7,28 +7,28 @@ In facial recognition, when a person walks in front of the camera, the system tr
 
 Instead of picking just one frame and matching it to the database (which might be an unfavorable angle or blurred image), the system **fuses** all vectors from the track buffer into a single, highly robust "consensus vector".
 
-## 2. Current Setup: "Equal Mean Pool"
-Currently, the pipeline employs a simple mathematical average to fuse embeddings. 
+## 2. Implementation: "AdaFace Feature Norm Weighting"
+The pipeline now employs **AdaFace Feature Norm Weighting** to fuse embeddings. This is a quality-aware fusion strategy where the weight of each frame is determined by the L2-norm of its unnormalized feature vector.
 
-As implemented in `core/fusion/aggregator.py`:
-```python
-mean_embedding = np.mean(embeddings, axis=0)
-```
-This is an **Equal Mean Pool**. It treats every extracted embedding identically. If 8 frames are perfectly clear and 2 frames suffer from heavy motion blur, those 2 blurry frames will equally pull down the average quality of the final consensus vector. This can occasionally lead to failed recognition (false negatives) for fast-moving targets.
+In AdaFace, the model is trained such that the feature norm correlates with image quality. Clear, front-facing images produce high norms, while blurry or occluded images produce low norms.
 
-## 3. Recommended Upgrade: "Quality-Weighted Mean"
-The recommended upgrade (listed as a "1h Effort | Pending" task in `PROJECT_ANALYSIS.md`) suggests giving proportional weight to high-quality frames.
+### How it works:
+1.  **Extraction**: The `AdaFaceRecognizer` extracts the 512-d feature and its raw L2-norm.
+2.  **Buffering**: Both the normalized embedding and the raw norm are stored in the `EmbeddingAggregator` buffer.
+3.  **Weighted Average**: When a decision is needed, the system calculates a weighted average using the norms:
+    ```python
+    consensus_embedding = np.average(embeddings, axis=0, weights=norms)
+    ```
+4.  **Final Normalization**: The resulting consensus vector is re-normalized to a unit vector for cosine similarity matching.
 
-Because the system already calculates a `blur_score` (Laplacian variance) and possesses a detection `confidence` score for every face, these metrics can be used as mathematical weights:
-*   **High Weight**: A perfectly clear, front-facing frame (high blur score/high confidence) exerts a strong influence on the final average.
-*   **Low Weight**: A slightly blurred or side-profile frame exerts very little influence on the final average.
+### Why this is better:
+*   **Automatic Quality Filtering**: Blurry or low-quality frames naturally have less influence on the final identity decision.
+*   **Robustness**: It prevents "pollution" of the track buffer by transient occlusions or fast motion blur.
+*   **Accuracy**: This is the state-of-the-art approach for temporal aggregation with AdaFace models.
 
-### Mathematical Implementation Concept
-Instead of `np.mean(embeddings)`, the new approach would resemble:
-```python
-# 'weights' is an array of quality scores for each embedding in the buffer
-weighted_embeddings = np.average(embeddings, axis=0, weights=weights)
-```
+## 3. Alternative Metrics (Optional)
+While feature norms are the most direct proxy for quality in AdaFace, the system is also capable of using:
+*   **Blur Score**: Laplacian variance-based sharpenss detection.
+*   **Detection Confidence**: The confidence score from the SCRFD detector.
 
-## Why Upgrade?
-Implementing a **Quality-Weighted Mean** naturally filters out noise. It prevents sub-optimal frames from polluting the high-quality frames within the same track. This significantly increases overall facial recognition accuracy, especially in challenging lighting conditions or with uncooperative subjects moving quickly past the camera.
+Currently, these are used as **hard gates** (dropping frames below a threshold) rather than soft weights, which simplifies the pipeline while maintaining high precision.

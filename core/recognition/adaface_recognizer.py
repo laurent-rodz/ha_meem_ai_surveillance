@@ -66,30 +66,32 @@ class AdaFaceRecognizer(BaseRecognizer):
         img = (img - 127.5) / 128.0
         return np.expand_dims(img, axis=0)
 
-    def extract_embedding(self, face_img: np.ndarray) -> np.ndarray:
-        """Extract and L2-normalize a 512-d face embedding."""
+    def extract_embedding(self, face_img: np.ndarray) -> tuple[np.ndarray, float]:
+        """Extract and L2-normalize a 512-d face embedding, returning both (embedding, norm)."""
         input_data = self._preprocess(face_img)
         outputs = self.session.run(None, {self.input_name: input_data})
         embedding = outputs[0][0]
 
-        norm = np.linalg.norm(embedding)
+        norm = float(np.linalg.norm(embedding))
         if norm > 0:
             embedding = embedding / norm
-        return embedding
+        return embedding, norm
 
-    def extract_embeddings_batch(self, face_imgs: list) -> np.ndarray:
-        """Extract and L2-normalize 512-d face embeddings for a batch of images."""
+    def extract_embeddings_batch(self, face_imgs: list) -> tuple[np.ndarray, np.ndarray]:
+        """Extract and L2-normalize 512-d face embeddings for a batch. Returns (embeddings, norms)."""
         if not face_imgs:
-            return np.array([])
+            return np.array([]), np.array([])
             
         # _preprocess adds a batch dim, so we concatenate them along axis 0
         batch = np.concatenate([self._preprocess(img) for img in face_imgs], axis=0)
         outputs = self.session.run(None, {self.input_name: batch})
         embeddings = outputs[0]
 
-        # L2-normalize each embedding in the batch
-        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
-        norms[norms == 0] = 1e-10
-        embeddings = embeddings / norms
+        # Calculate raw feature norms before normalization
+        norms = np.linalg.norm(embeddings, axis=1)
         
-        return embeddings
+        # L2-normalize each embedding in the batch
+        norms_expanded = norms[:, np.newaxis]
+        normalized_embeddings = embeddings / np.where(norms_expanded == 0, 1e-10, norms_expanded)
+        
+        return normalized_embeddings, norms

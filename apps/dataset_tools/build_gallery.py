@@ -76,9 +76,9 @@ def main():
 
         if person_imgs:
             # Extract and normalize embeddings using batch processing
-            person_embeddings = recognizer.extract_embeddings_batch(person_imgs)
+            person_embeddings, _ = recognizer.extract_embeddings_batch(person_imgs)
             
-            # normalize each embedding individually is already handled by batch method!
+            # person_embeddings is already a numpy array of normalized vectors
             normalized_embeddings = list(person_embeddings)
 
             # limit to max 10 embeddings per person (for efficiency)
