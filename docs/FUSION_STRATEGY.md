@@ -32,3 +32,24 @@ While feature norms are the most direct proxy for quality in AdaFace, the system
 *   **Detection Confidence**: The confidence score from the SCRFD detector.
 
 Currently, these are used as **hard gates** (dropping frames below a threshold) rather than soft weights, which simplifies the pipeline while maintaining high precision.
+
+## 4. Track Purity & Outlier Rejection
+Even with robust tracking, ID switches or severe occlusions can occur, introducing foreign embeddings into the buffer. To protect the consensus vector, we implement an **Outlier Rejection** step before fusion.
+
+### Implementation:
+Before a new frame's embedding is added to the `EmbeddingAggregator`, its cosine similarity is measured against the current running consensus (or the first highly confident frame). 
+*   If the similarity falls below a strict "purity threshold" (e.g., `< 0.4`), the frame is flagged as an anomaly and rejected.
+*   This prevents a single mis-tracked face from violently skewing the weighted average.
+
+## 5. Low-Resolution and Pose Adaptations
+Due to physical deployment constraints, such as steep camera angles and varying distances, bounding boxes often fall below ideal pixel resolutions. The fusion strategy incorporates safeguards for these sub-optimal captures:
+
+*   **Resolution-Aware Hard Gating:** While we accept smaller bounding boxes to maximize capture rates, extreme cases trigger a hard gate. If the bounding box falls below the minimum operable threshold, the frame is discarded before feature extraction to save compute cycles.
+*   **Pose Estimation Penalties (Planned):** In the future, we can introduce a soft penalty based on pitch and yaw. While AdaFace norms handle general quality well, explicitly penalizing extreme overhead angles ensures that frontal captures dominate the consensus weighting.
+
+## 6. Buffer Management & Lifecycle
+To maintain real-time performance and prevent memory bloat, the track buffer operates with strict lifecycle rules:
+
+*   **Maximum Capacity (Rolling Window):** The buffer holds a maximum of `N` frames (e.g., 15). Once full, it operates as a First-In-First-Out (FIFO) queue, dropping the oldest embeddings. This ensures the consensus represents the most recent visual evidence.
+*   **Triggering Recognition:** The fusion and subsequent database matching are triggered either when the buffer reaches a "minimum confidence mass" (e.g., 5 frames) or when the tracker signals that the target has exited the frame.
+*   **Buffer Flush:** Once a definitive "Authorized / Unknown" classification is logged for a specific track ID, the buffer is locked to prevent redundant database queries, and eventually flushed when the track terminates.
