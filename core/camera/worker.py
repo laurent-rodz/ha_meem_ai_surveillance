@@ -12,6 +12,7 @@ from core.quality import calculate_blur_score
 from core.quality.blur import AdaptiveBlurThreshold
 from core.io_worker import AsyncIOWorker
 from core.pipeline_state import PipelineState
+from core.utils.image import pose_weight
 
 class CameraWorker(threading.Thread):
     def __init__(self, camera_id, camera_url, detector, recognizer, face_db, config, resolution=None):
@@ -130,7 +131,12 @@ class CameraWorker(threading.Thread):
                 bbox_crop = frame[max(0, y1):y2, max(0, x1):x2]
                 
                 face.blur_score = calculate_blur_score(bbox_crop)
-                face.quality_score = face.blur_score  # Used by EmbeddingAggregator
+                
+                # Compute composite quality score: blur × confidence × pose × size
+                confidence = getattr(face, 'confidence', 0.5)
+                pose_w = pose_weight(face.kps) if (face.kps is not None and len(face.kps) >= 3) else 0.5
+                size_factor = min(face.width / self.config['recognition']['min_face_size'], 1.0)
+                face.quality_score = face.blur_score * confidence * pose_w * size_factor
                 
                 # Update adaptive blur threshold if enabled
                 if self.adaptive_blur is not None:
