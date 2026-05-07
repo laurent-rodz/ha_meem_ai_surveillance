@@ -9,6 +9,7 @@ from core.events import EventEmitter, SnapshotWriter
 from core.tracking import ByteTracker
 from core.fusion import EmbeddingAggregator
 from core.quality import calculate_blur_score
+from core.quality.blur import AdaptiveBlurThreshold
 from core.io_worker import AsyncIOWorker
 from core.pipeline_state import PipelineState
 
@@ -44,6 +45,18 @@ class CameraWorker(threading.Thread):
             camera_id=self.camera_id,
             cooldown_seconds=self.config.get('recognition', {}).get('cooldown_seconds', 6)
         )
+        
+        # Adaptive blur threshold per camera
+        quality_config = self.config.get('quality', {}).get('adaptive_blur', {})
+        if quality_config.get('enabled', True):
+            self.adaptive_blur = AdaptiveBlurThreshold(
+                window_size=quality_config.get('window_size', 500),
+                percentile=quality_config.get('percentile', 20.0),
+                fallback=quality_config.get('fallback', self.config['recognition'].get('blur_threshold', 100)),
+                min_samples=quality_config.get('min_samples', 10)
+            )
+        else:
+            self.adaptive_blur = None
         
         # Output Queue for Display
         self.frame_queue = queue.Queue(maxsize=2)
@@ -112,7 +125,15 @@ class CameraWorker(threading.Thread):
                 bbox_crop = frame[max(0, y1):y2, max(0, x1):x2]
                 
                 face.blur_score = calculate_blur_score(bbox_crop)
-                if face.blur_score < self.config['recognition']['blur_threshold']:
+                
+                # Update adaptive blur threshold if enabled
+                if self.adaptive_blur is not None:
+                    self.adaptive_blur.update(face.blur_score)
+                    blur_threshold = self.adaptive_blur.threshold()
+                else:
+                    blur_threshold = self.config['recognition']['blur_threshold']
+                
+                if face.blur_score < blur_threshold:
                     continue
                     
                 # Face Alignment
