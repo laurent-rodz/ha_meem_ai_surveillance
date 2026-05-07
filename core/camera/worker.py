@@ -167,7 +167,9 @@ class CameraWorker(threading.Thread):
                     ):
                         identity, score = self.face_db.match(
                             consensus_emb, 
-                            self.config['recognition']['similarity_threshold']
+                            self.config['recognition']['similarity_threshold'],
+                            match_margin=self.config['recognition'].get('match_margin', 0.05),
+                            match_top_k=self.config['recognition'].get('match_top_k', 10)
                         )
                         
                         # Skip if we already know this track as AUTHORIZED
