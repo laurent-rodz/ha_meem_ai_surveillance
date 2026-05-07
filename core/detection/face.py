@@ -11,6 +11,9 @@ class Face:
     feature_norm: float = 0.0  # Raw feature norm for quality-weighted fusion
     track_id: Optional[int] = None
     blur_score: float = 0.0
+    pitch: float = 0.0
+    yaw: float = 0.0
+    roll: float = 0.0
 
     @property
     def width(self) -> float:

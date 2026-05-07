@@ -12,6 +12,8 @@ recognition:
   upgrade_margin: 0.05        # Extra margin required to upgrade UNKNOWN → AUTHORIZED.
   match_margin: 0.05          # Minimum score difference between top-1 and top-2 identities.
   match_top_k: 10             # Number of top candidates to retrieve for margin test.
+  max_yaw: 30.0              # Maximum yaw angle in degrees for pose rejection
+  max_pitch: 30.0            # Maximum pitch angle in degrees for pose rejection
 
 fusion:
   buffer_size: 10             # Sliding window of frames per track

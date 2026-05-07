@@ -14,6 +14,7 @@ from core.quality.blur import AdaptiveBlurThreshold
 from core.io_worker import AsyncIOWorker
 from core.pipeline_state import PipelineState
 from core.utils.image import pose_weight
+from core.utils.pose_estimator import PoseEstimator
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +39,9 @@ class CameraWorker(threading.Thread):
             lost_track_buffer=tracking_config.get('lost_track_buffer', 30),
             minimum_matching_threshold=tracking_config.get('minimum_matching_threshold', 0.8)
         )
+        
+        # Pose estimator
+        self.pose_estimator = PoseEstimator()
         
         # Fusion config
         fusion_config = self.config.get('fusion', {})
@@ -122,6 +126,11 @@ class CameraWorker(threading.Thread):
             # 2. Tracking
             tracked_faces = self.tracker.update(faces)
             
+            # 2.5 Pose Estimation
+            for face in tracked_faces:
+                if face.kps is not None and len(face.kps) == 5:
+                    face.pitch, face.yaw, face.roll = self.pose_estimator.estimate_pose(face.kps, frame.shape)
+            
             # Expire stale tracks based on time (replaces manual tracker-based cleanup)
             expired_tracks = self.aggregator.expire_stale_tracks()
             for track_id in expired_tracks:
@@ -134,7 +143,13 @@ class CameraWorker(threading.Thread):
                 # Operational Constraints: Resolution Gate
                 if face.width < self.config['recognition']['min_face_size']:
                     continue
-                    
+                
+                # Pose Rejection
+                max_yaw = self.config.get('recognition', {}).get('max_yaw', 30.0)
+                max_pitch = self.config.get('recognition', {}).get('max_pitch', 30.0)
+                if abs(face.yaw) > max_yaw or abs(face.pitch) > max_pitch:
+                    continue
+                     
                 # Blur Rejection
                 x1, y1, x2, y2 = face.bbox[:4].astype(int)
                 bbox_crop = frame[max(0, y1):y2, max(0, x1):x2]
