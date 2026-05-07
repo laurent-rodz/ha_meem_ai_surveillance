@@ -27,3 +27,8 @@ quality:
     percentile: 20.0          # Percentile to use for adaptive threshold (20 = 20th percentile)
     fallback: 100.0           # Fallback threshold until enough samples collected
     min_samples: 10           # Minimum samples before switching to adaptive mode
+
+tracking:
+  track_activation_threshold: 0.25  # Minimum detection confidence to start a track
+  lost_track_buffer: 30              # Frames to keep a lost track alive
+  minimum_matching_threshold: 0.8    # Minimum IoU for track-detection matching

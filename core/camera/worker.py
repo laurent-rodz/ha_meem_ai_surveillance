@@ -32,7 +32,12 @@ class CameraWorker(threading.Thread):
         self.config = config
         
         # Per-camera State
-        self.tracker = ByteTracker(track_activation_threshold=0.25, lost_track_buffer=30)
+        tracking_config = self.config.get('tracking', {})
+        self.tracker = ByteTracker(
+            track_activation_threshold=tracking_config.get('track_activation_threshold', 0.25),
+            lost_track_buffer=tracking_config.get('lost_track_buffer', 30),
+            minimum_matching_threshold=tracking_config.get('minimum_matching_threshold', 0.8)
+        )
         
         # Fusion config
         fusion_config = self.config.get('fusion', {})
