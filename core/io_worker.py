@@ -1,10 +1,12 @@
+import logging
 import queue
 import threading
 from datetime import datetime
 from typing import Optional
-import traceback
 
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 class AsyncIOWorker:
@@ -34,7 +36,7 @@ class AsyncIOWorker:
         try:
             self._queue.put_nowait((frame.copy(), event_data.copy(), identity, timestamp))
         except queue.Full:
-            print("[AsyncIOWorker] queue full — event dropped")
+            log.warning("[AsyncIOWorker] queue full — event dropped")
 
     def _worker(self):
         while True:
@@ -49,8 +51,7 @@ class AsyncIOWorker:
                 event_data["snapshot"] = snapshot_path
                 self._event_emitter.emit(event_data)
             except Exception as e:
-                print(f"[AsyncIOWorker] error: {e}")
-                traceback.print_exc()
+                log.error(f"AsyncIOWorker error: {e}", exc_info=True)
             finally:
                 self._queue.task_done()
 

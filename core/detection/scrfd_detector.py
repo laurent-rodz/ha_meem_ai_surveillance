@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 # Windows TRT pip install fix: prepend tensorrt_libs to PATH before importing onnxruntime
 if sys.platform == "win32":
@@ -12,6 +13,8 @@ import onnxruntime as ort
 from typing import List
 from .base_detector import BaseDetector
 from .face import Face
+
+log = logging.getLogger(__name__)
 
 
 class SCRFDDetector(BaseDetector):
@@ -62,7 +65,7 @@ class SCRFDDetector(BaseDetector):
         )
 
         active = self.detector.session.get_providers()
-        print(f"[SCRFDDetector] Active providers: {active}")
+        log.info(f"[SCRFDDetector] Active providers: {active}")
 
     def detect(self, image: np.ndarray) -> List[Face]:
         """Runs inference using insightface and returns Face objects."""

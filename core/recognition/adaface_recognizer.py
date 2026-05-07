@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 # Windows TRT pip install fix: prepend tensorrt_libs to PATH before importing onnxruntime
 if sys.platform == "win32":
@@ -11,6 +12,8 @@ import numpy as np
 import cv2
 import onnxruntime as ort
 from .base_recognizer import BaseRecognizer
+
+log = logging.getLogger(__name__)
 
 
 class AdaFaceRecognizer(BaseRecognizer):
@@ -54,7 +57,7 @@ class AdaFaceRecognizer(BaseRecognizer):
         self.input_shape = (112, 112)  # Standard AdaFace / ArcFace input size
 
         active = self.session.get_providers()
-        print(f"[AdaFaceRecognizer] Active providers: {active}")
+        log.info(f"[AdaFaceRecognizer] Active providers: {active}")
 
     def _preprocess(self, face_img: np.ndarray) -> np.ndarray:
         """Resize, convert color space, normalize to [-1, 1], and add batch dim."""
