@@ -10,6 +10,7 @@ from core.tracking import ByteTracker
 from core.fusion import EmbeddingAggregator
 from core.quality import calculate_blur_score
 from core.io_worker import AsyncIOWorker
+from core.pipeline_state import PipelineState
 
 class CameraWorker(threading.Thread):
     def __init__(self, camera_id, camera_url, detector, recognizer, face_db, config, resolution=None):
@@ -39,9 +40,10 @@ class CameraWorker(threading.Thread):
             camera_id=self.camera_id
         )
         self.io_worker = AsyncIOWorker(self.event_emitter, self.snapshot_writer)
-        self.decided_tracks = set()
-        self.identity_last_seen = {}
-        self.identity_cooldown_seconds = 6
+        self.pipeline_state = PipelineState(
+            camera_id=self.camera_id,
+            cooldown_seconds=self.config.get('recognition', {}).get('cooldown_seconds', 6)
+        )
         
         # Output Queue for Display
         self.frame_queue = queue.Queue(maxsize=2)
@@ -95,7 +97,7 @@ class CameraWorker(threading.Thread):
             for track_id in list(self.aggregator.track_buffers.keys()):
                 if track_id not in active_track_ids:
                     self.aggregator.clear_track(track_id)
-                    self.decided_tracks.discard(track_id)
+                    self.pipeline_state.release_track(track_id)
                     
             valid_faces = []
             valid_face_imgs = []
@@ -137,24 +139,25 @@ class CameraWorker(threading.Thread):
                     # Get consensus
                     consensus_emb = self.aggregator.get_aggregated_embedding(face.track_id)
                     
-                    if consensus_emb is not None and face.track_id not in self.decided_tracks:
+                    # Process if: not decided yet, or upgradeable (UNKNOWN → AUTHORIZED)
+                    if consensus_emb is not None and (
+                        not self.pipeline_state.is_decided(face.track_id) or
+                        self.pipeline_state.is_upgradeable(face.track_id)
+                    ):
                         identity, score = self.face_db.match(
                             consensus_emb, 
                             self.config['recognition']['similarity_threshold']
                         )
                         
-                        current_time = time.time()
+                        # Skip if we already know this track as AUTHORIZED
+                        if identity and self.pipeline_state.is_decided(face.track_id) and \
+                           not self.pipeline_state.is_upgradeable(face.track_id):
+                            continue
                         
                         event_emitted = False
                         
-                        # Check for cooldown if authorized
-                        can_emit = True
-                        if identity is not None:
-                            last_seen = self.identity_last_seen.get(identity, 0)
-                            if current_time - last_seen < self.identity_cooldown_seconds:
-                                can_emit = False
-                        
-                        if can_emit:
+                        # Check for cooldown
+                        if self.pipeline_state.can_alert(identity, face.track_id):
                             # 1. Create a single source of truth for time
                             event_time = datetime.now()
                             
@@ -181,12 +184,12 @@ class CameraWorker(threading.Thread):
                             print(f"[{self.camera_id}] {event_data['event']}: {identity if identity else 'Unknown'} ({score:.3f})")
                             self.io_worker.submit(frame, event_data, identity, event_time)
                             
-                            if identity is not None:
-                                self.identity_last_seen[identity] = current_time
+                            # Upgrade track if previously UNKNOWN, else mark as decided
+                            if identity and self.pipeline_state.is_upgradeable(face.track_id):
+                                self.pipeline_state.upgrade_track(face.track_id, identity)
+                            else:
+                                self.pipeline_state.mark_decided(face.track_id, identity)
                             event_emitted = True
-                        
-                        if event_emitted:
-                            self.decided_tracks.add(face.track_id)
                 
             for face in tracked_faces:
                 # 5. Visualization (Simplified)
