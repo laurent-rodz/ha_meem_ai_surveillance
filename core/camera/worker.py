@@ -9,6 +9,7 @@ from core.events import EventEmitter, SnapshotWriter
 from core.tracking import ByteTracker
 from core.fusion import EmbeddingAggregator
 from core.quality import calculate_blur_score
+from core.io_worker import AsyncIOWorker
 
 class CameraWorker(threading.Thread):
     def __init__(self, camera_id, camera_url, detector, recognizer, face_db, config, resolution=None):
@@ -37,6 +38,7 @@ class CameraWorker(threading.Thread):
             base_dir="snapshots",
             camera_id=self.camera_id
         )
+        self.io_worker = AsyncIOWorker(self.event_emitter, self.snapshot_writer)
         self.decided_tracks = set()
         self.identity_last_seen = {}
         self.identity_cooldown_seconds = 6
@@ -66,6 +68,8 @@ class CameraWorker(threading.Thread):
 
     def stop(self):
         self.stop_event.set()
+        if hasattr(self, 'io_worker'):
+            self.io_worker.stop()
 
     def run(self):
         print(f"[{self.camera_id}] Worker thread started.")
@@ -172,12 +176,10 @@ class CameraWorker(threading.Thread):
                             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                             cv2.putText(frame, identity or "UNKNOWN", (x1, y1 - 10),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                            snapshot_path = self.snapshot_writer.save(frame, identity, timestamp=event_time)
-                            event_data["snapshot"] = snapshot_path
                             
-                            # 4. Emit event
+                            # 4. Emit event asynchronously
                             print(f"[{self.camera_id}] {event_data['event']}: {identity if identity else 'Unknown'} ({score:.3f})")
-                            self.event_emitter.emit(event_data)
+                            self.io_worker.submit(frame, event_data, identity, event_time)
                             
                             if identity is not None:
                                 self.identity_last_seen[identity] = current_time
