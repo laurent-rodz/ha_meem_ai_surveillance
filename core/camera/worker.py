@@ -158,6 +158,15 @@ class CameraWorker(threading.Thread):
                         
                         # Check for cooldown
                         if self.pipeline_state.can_alert(identity, face.track_id):
+                            # Determine if this is an upgrade scenario
+                            upgradeable = identity and self.pipeline_state.is_upgradeable(face.track_id)
+                            threshold = self.config['recognition']['similarity_threshold']
+                            upgrade_margin = self.config['recognition'].get('upgrade_margin', 0.05)
+                            
+                            # For upgrade, require higher confidence (threshold + margin)
+                            if upgradeable and score < threshold + upgrade_margin:
+                                continue  # Not confident enough to upgrade
+                            
                             # 1. Create a single source of truth for time
                             event_time = datetime.now()
                             
@@ -184,8 +193,8 @@ class CameraWorker(threading.Thread):
                             print(f"[{self.camera_id}] {event_data['event']}: {identity if identity else 'Unknown'} ({score:.3f})")
                             self.io_worker.submit(frame, event_data, identity, event_time)
                             
-                            # Upgrade track if previously UNKNOWN, else mark as decided
-                            if identity and self.pipeline_state.is_upgradeable(face.track_id):
+                            # Upgrade track if previously UNKNOWN with sufficient confidence
+                            if upgradeable and score >= threshold + upgrade_margin:
                                 self.pipeline_state.upgrade_track(face.track_id, identity)
                             else:
                                 self.pipeline_state.mark_decided(face.track_id, identity)
