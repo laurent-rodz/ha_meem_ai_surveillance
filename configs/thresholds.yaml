@@ -9,10 +9,16 @@ recognition:
   similarity_threshold: 0.55  # Cosine similarity threshold for AdaFace matching. Higher = stricter.
   min_face_size: 80           # Resolution gate: Minimum width of face bbox in pixels.
   blur_threshold: 100         # Quality gate: Minimum Laplacian variance. Faces below this are rejected as blurry.
-  min_frames_for_decision: 6  # Multi-frame fusion: Minimum consecutive tracked frames needed before identifying.
   upgrade_margin: 0.05        # Extra margin required to upgrade UNKNOWN → AUTHORIZED.
   match_margin: 0.05          # Minimum score difference between top-1 and top-2 identities.
   match_top_k: 10             # Number of top candidates to retrieve for margin test.
+
+fusion:
+  buffer_size: 10             # Sliding window of frames per track
+  min_frames: 6                # Minimum frames required before decision (moved from recognition)
+  min_decision_seconds: 0.3    # Minimum wall-clock seconds before deciding (consistent across FPS)
+  recency_decay: 0.95          # Exponential decay for recency weighting (1.0 = no decay)
+  expire_after_seconds: 5.0    # Remove track if not updated in this time
 
 quality:
   adaptive_blur:

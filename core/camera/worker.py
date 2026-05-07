@@ -28,9 +28,15 @@ class CameraWorker(threading.Thread):
         
         # Per-camera State
         self.tracker = ByteTracker(track_activation_threshold=0.25, lost_track_buffer=30)
+        
+        # Fusion config
+        fusion_config = self.config.get('fusion', {})
         self.aggregator = EmbeddingAggregator(
-            buffer_size=10, 
-            min_frames=config['recognition']['min_frames_for_decision']
+            buffer_size=fusion_config.get('buffer_size', 10),
+            min_frames=fusion_config.get('min_frames', 6),
+            min_decision_seconds=fusion_config.get('min_decision_seconds', 0.3),
+            recency_decay=fusion_config.get('recency_decay', 0.95),
+            expire_after_seconds=fusion_config.get('expire_after_seconds', 5.0)
         )
         self.event_emitter = EventEmitter(
             camera_id=self.camera_id,
@@ -106,11 +112,10 @@ class CameraWorker(threading.Thread):
             # 2. Tracking
             tracked_faces = self.tracker.update(faces)
             
-            active_track_ids = set(face.track_id for face in tracked_faces)
-            for track_id in list(self.aggregator.track_buffers.keys()):
-                if track_id not in active_track_ids:
-                    self.aggregator.clear_track(track_id)
-                    self.pipeline_state.release_track(track_id)
+            # Expire stale tracks based on time (replaces manual tracker-based cleanup)
+            expired_tracks = self.aggregator.expire_stale_tracks()
+            for track_id in expired_tracks:
+                self.pipeline_state.release_track(track_id)
                     
             valid_faces = []
             valid_face_imgs = []
@@ -125,6 +130,7 @@ class CameraWorker(threading.Thread):
                 bbox_crop = frame[max(0, y1):y2, max(0, x1):x2]
                 
                 face.blur_score = calculate_blur_score(bbox_crop)
+                face.quality_score = face.blur_score  # Used by EmbeddingAggregator
                 
                 # Update adaptive blur threshold if enabled
                 if self.adaptive_blur is not None:
