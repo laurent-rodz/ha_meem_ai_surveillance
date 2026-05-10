@@ -8,7 +8,8 @@ detection:
 recognition:
   similarity_threshold: 0.55  # Cosine similarity threshold for AdaFace matching. Higher = stricter.
   min_face_size: 80           # Resolution gate: Minimum width of face bbox in pixels.
-  blur_threshold: 100         # Quality gate: Minimum Laplacian variance. Faces below this are rejected as blurry.
+  blur_threshold: 30          # Quality gate: Minimum Laplacian variance. Faces below this are rejected as blurry.
+                                   # Used as upper cap for the adaptive threshold (was 100 — too permissive for low-light).
   upgrade_margin: 0.05        # Extra margin required to upgrade UNKNOWN → AUTHORIZED.
   match_margin: 0.05          # Minimum score difference between top-1 and top-2 identities.
   match_top_k: 10             # Number of top candidates to retrieve for margin test.
@@ -27,7 +28,7 @@ quality:
     enabled: true
     window_size: 500          # Number of recent blur scores to keep
     percentile: 20.0          # Percentile to use for adaptive threshold (20 = 20th percentile)
-    fallback: 100.0           # Fallback threshold until enough samples collected
+    fallback: 30.0          # Fallback threshold until enough samples collected (matches Version A)
     min_samples: 10           # Minimum samples before switching to adaptive mode
 
 tracking:

@@ -60,10 +60,11 @@ class ByteTracker:
             best_face = None
             
             for face in detected_faces:
-                # ByteTrack returns smoothed bounding boxes. The IoU should be high 
-                # compared to the original detection.
+                # ByteTrack returns smoothed bounding boxes. The IoU should be high
+                # compared to the original detection. Use >= so that ties go to the
+                # last-seen face (deterministic ordering), matching SORTTracker stability.
                 iou = self._calculate_iou((tx1, ty1, tx2, ty2), face.bbox[:4])
-                if iou > best_iou:
+                if iou >= best_iou:
                     best_iou = iou
                     best_face = face
                     
