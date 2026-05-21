@@ -448,5 +448,5 @@ def generate_markdown_report(log_file):
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    log_file_path = os.path.join(os.path.dirname(__file__), '..', 'logs', 'events_28_april.jsonl')
+    log_file_path = os.path.join(os.path.dirname(__file__), '..', 'logs', 'events_11_may.jsonl')
     generate_markdown_report(log_file_path)

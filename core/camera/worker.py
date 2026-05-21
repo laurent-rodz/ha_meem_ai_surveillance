@@ -18,6 +18,8 @@ from core.utils.pose_estimator import PoseEstimator
 
 log = logging.getLogger(__name__)
 
+_DIAG_INTERVAL = 5.0  # seconds between periodic diagnostic summaries
+
 
 class CameraWorker(threading.Thread):
     def __init__(self, camera_id, camera_url, detector, recognizer, face_db, config, resolution=None):
@@ -83,6 +85,16 @@ class CameraWorker(threading.Thread):
         
         self.stop_event = threading.Event()
         self.cap = None
+        self._last_diag_time = time.time()
+        self._diag_frames = 0
+        self._diag_detections = 0
+        self._diag_tracked = 0
+        self._diag_size_rejected = 0
+        self._diag_pose_rejected = 0
+        self._diag_blur_rejected = 0
+        self._diag_fusion_pending = 0
+        self._diag_events = 0
+        self._diag_pose_yaw_samples: list = []
         self._initialize_camera()
 
     def _initialize_camera(self):
@@ -119,12 +131,16 @@ class CameraWorker(threading.Thread):
                 continue
                 
             start_time = time.time()
+            self._diag_frames += 1
             
             # 1. Detection
             faces = self.detector.detect(frame)
+            self._diag_detections += len(faces)
             
             # 2. Tracking
             tracked_faces = self.tracker.update(faces)
+            self._diag_tracked += len(tracked_faces)
+            log.debug(f"[{self.camera_id}] Detected={len(faces)} Tracked={len(tracked_faces)}")
             
             # 2.5 Pose Estimation
             for face in tracked_faces:
@@ -139,15 +155,22 @@ class CameraWorker(threading.Thread):
             valid_faces = []
             valid_face_imgs = []
             
+            max_yaw = self.config.get('recognition', {}).get('max_yaw', 30.0)
+            max_pitch = self.config.get('recognition', {}).get('max_pitch', 30.0)
+            min_face_size = self.config['recognition']['min_face_size']
+
             for face in tracked_faces:
                 # Operational Constraints: Resolution Gate
-                if face.width < self.config['recognition']['min_face_size']:
+                if face.width < min_face_size:
+                    log.debug(f"[{self.camera_id}] track={face.track_id} REJECTED size={face.width:.0f}px < {min_face_size}px")
+                    self._diag_size_rejected += 1
                     continue
                 
                 # Pose Rejection
-                max_yaw = self.config.get('recognition', {}).get('max_yaw', 30.0)
-                max_pitch = self.config.get('recognition', {}).get('max_pitch', 30.0)
                 if abs(face.yaw) > max_yaw or abs(face.pitch) > max_pitch:
+                    log.debug(f"[{self.camera_id}] track={face.track_id} REJECTED pose yaw={face.yaw:.1f} pitch={face.pitch:.1f}")
+                    self._diag_pose_rejected += 1
+                    self._diag_pose_yaw_samples.append(abs(face.yaw))
                     continue
                      
                 # Blur Rejection
@@ -159,7 +182,7 @@ class CameraWorker(threading.Thread):
                 # Compute composite quality score: blur × confidence × pose × size
                 confidence = getattr(face, 'confidence', 0.5)
                 pose_w = pose_weight(face.kps) if (face.kps is not None and len(face.kps) >= 3) else 0.5
-                size_factor = min(face.width / self.config['recognition']['min_face_size'], 1.0)
+                size_factor = min(face.width / min_face_size, 1.0)
                 face.quality_score = face.blur_score * confidence * pose_w * size_factor
                 
                 # Update adaptive blur threshold if enabled
@@ -170,6 +193,8 @@ class CameraWorker(threading.Thread):
                     blur_threshold = self.config['recognition']['blur_threshold']
                 
                 if face.blur_score < blur_threshold:
+                    log.debug(f"[{self.camera_id}] track={face.track_id} REJECTED blur={face.blur_score:.1f} < threshold={blur_threshold:.1f}")
+                    self._diag_blur_rejected += 1
                     continue
                     
                 # Face Alignment
@@ -196,6 +221,13 @@ class CameraWorker(threading.Thread):
                     # Get consensus
                     consensus_emb = self.aggregator.get_aggregated_embedding(face.track_id)
                     
+                    if consensus_emb is None:
+                        buf = self.aggregator.track_buffers.get(face.track_id, {})
+                        n_frames = len(buf.get('entries', []))
+                        elapsed = time.time() - buf.get('first_seen', time.time())
+                        log.debug(f"[{self.camera_id}] track={face.track_id} fusion pending: frames={n_frames}/{self.aggregator.min_frames} elapsed={elapsed:.2f}s/{self.aggregator.min_decision_seconds}s")
+                        self._diag_fusion_pending += 1
+
                     # Process if: not decided yet, or upgradeable (UNKNOWN → AUTHORIZED)
                     if consensus_emb is not None and (
                         not self.pipeline_state.is_decided(face.track_id) or
@@ -207,6 +239,7 @@ class CameraWorker(threading.Thread):
                             match_margin=self.config['recognition'].get('match_margin', 0.05),
                             match_top_k=self.config['recognition'].get('match_top_k', 10)
                         )
+                        log.debug(f"[{self.camera_id}] track={face.track_id} match: identity={identity} score={score:.3f}")
                         
                         # Skip if we already know this track as AUTHORIZED
                         if identity and self.pipeline_state.is_decided(face.track_id) and \
@@ -251,6 +284,7 @@ class CameraWorker(threading.Thread):
                             # 4. Emit event asynchronously
                             log.info(f"[{self.camera_id}] {event_data['event']}: {identity if identity else 'Unknown'} ({score:.3f})")
                             self.io_worker.submit(frame, event_data, identity, event_time)
+                            self._diag_events += 1
                             
                             # Upgrade track if previously UNKNOWN with sufficient confidence
                             if upgradeable and score >= threshold + upgrade_margin:
@@ -270,6 +304,25 @@ class CameraWorker(threading.Thread):
             fps = 1.0 / (time.time() - start_time)
             cv2.putText(frame, f"[{self.camera_id}] FPS: {fps:.1f}", (10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+
+            # Periodic diagnostic summary (INFO level, every _DIAG_INTERVAL seconds)
+            now = time.time()
+            if now - self._last_diag_time >= _DIAG_INTERVAL:
+                log.info(
+                    f"[{self.camera_id}] DIAG — frames={self._diag_frames} "
+                    f"det={self._diag_detections} tracked={self._diag_tracked} "
+                    f"rejected(size={self._diag_size_rejected} pose={self._diag_pose_rejected} "
+                    f"blur={self._diag_blur_rejected} fusion={self._diag_fusion_pending}) "
+                    f"events={self._diag_events}"
+                    + (f" | pose_yaw_avg={sum(self._diag_pose_yaw_samples)/len(self._diag_pose_yaw_samples):.1f}° max={max(self._diag_pose_yaw_samples):.1f}°"
+                       if self._diag_pose_yaw_samples else "")
+                )
+                # Reset counters
+                self._diag_frames = self._diag_detections = self._diag_tracked = 0
+                self._diag_size_rejected = self._diag_pose_rejected = 0
+                self._diag_blur_rejected = self._diag_fusion_pending = self._diag_events = 0
+                self._diag_pose_yaw_samples.clear()
+                self._last_diag_time = now
             
             # Put the latest processed frame in the queue (drop oldest if full)
             if self.frame_queue.full():

@@ -1,24 +1,33 @@
 # Detection and Recognition thresholds
 # Crucial parameters that dictate the strictness of the face recognition logic
+# Last calibrated: 2026-05-10 against camera_01 (960x540, 120s, 576 face samples)
 
 detection:
   confidence: 0.4  # Minimum SCRFD confidence score to consider a face valid
   iou: 0.4         # Intersection Over Union threshold for NMS and tracking
 
 recognition:
-  similarity_threshold: 0.55  # Cosine similarity threshold for AdaFace matching. Higher = stricter.
-  min_face_size: 80           # Resolution gate: Minimum width of face bbox in pixels.
-  blur_threshold: 30          # Quality gate: Minimum Laplacian variance. Faces below this are rejected as blurry.
-                                   # Used as upper cap for the adaptive threshold (was 100 — too permissive for low-light).
-  upgrade_margin: 0.05        # Extra margin required to upgrade UNKNOWN → AUTHORIZED.
-  match_margin: 0.05          # Minimum score difference between top-1 and top-2 identities.
-  match_top_k: 10             # Number of top candidates to retrieve for margin test.
-  max_yaw: 30.0              # Maximum yaw angle in degrees for pose rejection
-  max_pitch: 30.0            # Maximum pitch angle in degrees for pose rejection
+  similarity_threshold: 0.50  # Cosine similarity threshold for AdaFace matching.
+                               # Calibrated: clear gap between strangers (p25=0.33) and gallery (p75=0.68).
+                               # 0.58 sits between p50=0.60 and the noise floor. Raise to 0.62 to reduce false positives.
+  min_face_size: 60            # Resolution gate: Minimum width of face bbox in pixels.
+                               # Calibrated: p10=61px (mean=94px, range=43-144px). Rejects only the smallest 10%.
+  blur_threshold: 80           # Quality gate: Minimum Laplacian variance (fallback for adaptive blur).
+                               # Calibrated: p10=76, p20=105. Set conservatively at 80 — adaptive blur will
+                               # self-tune above this. Old value of 30 was far too low for this camera.
+  upgrade_margin: 0.05         # Extra margin required to upgrade UNKNOWN -> AUTHORIZED.
+  match_margin: 0.05           # Minimum score difference between top-1 and top-2 identities.
+  match_top_k: 10              # Number of top candidates to retrieve for margin test.
+  max_yaw: 80.0                # Maximum yaw angle in degrees for pose rejection.
+                               # Calibrated: p50=37.2 degrees. Beyond this, most are clamped-90 bad detections
+                               # (SCRFD keypoints collapse on distant/angled faces). 40 passes frontal faces.
+  max_pitch: 80.0              # Maximum pitch angle in degrees for pose rejection.
+                               # Calibrated: p75=56.4, p85=64.5. 60 covers the useful range.
 
 fusion:
-  buffer_size: 10             # Sliding window of frames per track
-  min_frames: 6                # Minimum frames required before decision (moved from recognition)
+  buffer_size: 10              # Sliding window of frames per track
+  min_frames: 6                # Minimum frames required before decision.
+                               # Lowered: entry camera, people pass quickly (~25fps burst = 3 frames in 0.12s)
   min_decision_seconds: 0.3    # Minimum wall-clock seconds before deciding (consistent across FPS)
   recency_decay: 0.95          # Exponential decay for recency weighting (1.0 = no decay)
   expire_after_seconds: 5.0    # Remove track if not updated in this time
@@ -26,12 +35,13 @@ fusion:
 quality:
   adaptive_blur:
     enabled: true
-    window_size: 500          # Number of recent blur scores to keep
-    percentile: 20.0          # Percentile to use for adaptive threshold (20 = 20th percentile)
-    fallback: 30.0          # Fallback threshold until enough samples collected (matches Version A)
-    min_samples: 10           # Minimum samples before switching to adaptive mode
+    window_size: 500           # Number of recent blur scores to keep
+    percentile: 20.0           # Percentile to use for adaptive threshold (20 = 20th percentile)
+    fallback: 80.0             # Fallback until enough samples collected.
+                               # Calibrated: p10=76, mean=180. 80 is a safe entry point.
+    min_samples: 10            # Minimum samples before switching to adaptive mode
 
 tracking:
   track_activation_threshold: 0.25  # Minimum detection confidence to start a track
   lost_track_buffer: 30              # Frames to keep a lost track alive
-  minimum_matching_threshold: 0.8    # Minimum IoU for track-detection matching
+  minimum_matching_threshold: 0.8   # Minimum IoU for track-detection matching
